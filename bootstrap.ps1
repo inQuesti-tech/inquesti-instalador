@@ -6,14 +6,17 @@
 #   $env:INQUESTI_SIMULAR = "1"; irm .../bootstrap.ps1 | iex        (mostra o que faria)
 #
 # $env:INQUESTI_REF = "<branch ou tag>" baixa o instalador de outra referencia (padrao: main).
-$ErrorActionPreference = "Stop"
+# "Continue", nao "Stop": com "Stop", o aviso do gh no stderr ("You are not logged into any GitHub hosts")
+# vira erro fatal no PowerShell e o bootstrap para antes do login (visto numa maquina limpa em 26/10/2026).
+# Cada passo confere o $LASTEXITCODE.
+$ErrorActionPreference = "Continue"
 $Repo = "inQuesti-tech/inquesti-plugins"
 $Ref = if ($env:INQUESTI_REF) { $env:INQUESTI_REF } else { "main" }
 $Simular = ($env:INQUESTI_SIMULAR -eq "1")
 function Tem($c) { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
 function Faria($m) { Write-Host "  - faria: $m" }
 
-Write-Host "`ninQuesti · preparando o instalador$(if ($Simular) {' (simulacao)'})" -ForegroundColor Green
+Write-Host "`ninQuesti - preparando o instalador$(if ($Simular) {' (simulacao)'})" -ForegroundColor Green
 if (-not (Tem winget)) { Write-Host "Falta o winget (App Installer da Microsoft Store). Instale e rode de novo."; return }
 
 if (-not (Tem gh)) {
@@ -22,7 +25,7 @@ if (-not (Tem gh)) {
     $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User") } }
 
 $logado = $false
-if (Tem gh) { gh auth status --hostname github.com *> $null; $logado = ($LASTEXITCODE -eq 0) }
+if (Tem gh) { gh auth status --hostname github.com 2>&1 | Out-Null; $logado = ($LASTEXITCODE -eq 0) }
 if (-not $logado) {
   if ($Simular) { Faria "gh auth login --web (voce entra com a sua conta do GitHub da inQuesti)" } else {
     Write-Host "  Entre com a sua conta do GitHub (a que tem acesso a organizacao inQuesti-tech):"
