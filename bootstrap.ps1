@@ -19,6 +19,14 @@ function Faria($m) { Write-Host "  - faria: $m" }
 Write-Host "`ninQuesti - preparando o instalador$(if ($Simular) {' (simulacao)'})" -ForegroundColor Green
 if (-not (Tem winget)) { Write-Host "Falta o winget (App Installer da Microsoft Store). Instale e rode de novo."; return }
 
+# Git antes do login: o `gh auth login` configura o Git e, sem ele, sai com erro mesmo depois de logar
+# (maquina limpa, 26/10/2026: "unable to find git executable in PATH").
+function Recarregar-Path { $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User") }
+if (-not (Tem git)) {
+  if ($Simular) { Faria "winget install --id Git.Git" } else {
+    winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements
+    Recarregar-Path } }
+
 if (-not (Tem gh)) {
   if ($Simular) { Faria "winget install --id GitHub.cli" } else {
     winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements
@@ -30,6 +38,8 @@ if (-not $logado) {
   if ($Simular) { Faria "gh auth login --web (voce entra com a sua conta do GitHub da inQuesti)" } else {
     Write-Host "  Entre com a sua conta do GitHub (a que tem acesso a organizacao inQuesti-tech):"
     gh auth login --hostname github.com --git-protocol https --web
+    # Vale o estado final, nao o codigo de saida do login (ele pode falhar num passo depois de autenticar).
+    gh auth status --hostname github.com 2>&1 | Out-Null
     $logado = ($LASTEXITCODE -eq 0) } }
 
 if (-not $logado) {
