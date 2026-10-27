@@ -1,9 +1,15 @@
-# Bootstrap do instalador inQuesti (Windows). E o UNICO arquivo publico: nao tem segredo nem regra da casa.
+# Bootstrap do instalador inQuesti (WINDOWS, PowerShell). E o UNICO arquivo publico: nao tem segredo nem regra da casa.
 # O repo inquesti-plugins e privado, entao este script so instala o gh, faz o SEU login no GitHub e baixa
 # o instalador de verdade (instalador/instalar.ps1) do repo privado com `gh api`, e o executa.
 #
-#   irm https://raw.githubusercontent.com/inQuesti-tech/inquesti-instalador/main/bootstrap.ps1 | iex
-#   $env:INQUESTI_SIMULAR = "1"; irm .../bootstrap.ps1 | iex        (mostra o que faria)
+# Windows (PowerShell), esta linha:
+#   irm https://inquesti-tech.github.io/inquesti-instalador/i.ps1 | iex
+#   $env:INQUESTI_SIMULAR = "1"; irm https://inquesti-tech.github.io/inquesti-instalador/i.ps1 | iex   (mostra o que faria)
+#   (endereco longo, igual: https://raw.githubusercontent.com/inQuesti-tech/inquesti-instalador/main/bootstrap.ps1)
+# Mac e Linux usam OUTRA linha, no Terminal (nao no PowerShell):
+#   curl -fsSL https://inquesti-tech.github.io/inquesti-instalador/i.sh | bash
+# `curl ... | bash` colado no PowerShell nao funciona (no PowerShell, curl e outro comando e nao ha bash):
+# no Windows e sempre a linha do `irm`.
 #
 # $env:INQUESTI_REF = "<branch ou tag>" baixa o instalador de outra referencia (padrao: main).
 # "Continue", nao "Stop": com "Stop", o aviso do gh no stderr ("You are not logged into any GitHub hosts")
@@ -16,7 +22,12 @@ $Simular = ($env:INQUESTI_SIMULAR -eq "1")
 function Tem($c) { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
 function Faria($m) { Write-Host "  - faria: $m" }
 
-Write-Host "`ninQuesti - preparando o instalador$(if ($Simular) {' (simulacao)'})" -ForegroundColor Green
+Write-Host "`ninQuesti - preparando o instalador (Windows)$(if ($Simular) {' (simulacao)'})" -ForegroundColor Green
+# PowerShell 7 no Mac ou no Linux: a linha certa e a do bash.
+if ($IsMacOS -or $IsLinux) {
+  Write-Host "Esta e a linha do Windows. No Mac e no Linux, no Terminal, use:" -ForegroundColor Yellow
+  Write-Host "  curl -fsSL https://inquesti-tech.github.io/inquesti-instalador/i.sh | bash" -ForegroundColor Green
+  return }
 if (-not (Tem winget)) { Write-Host "Falta o winget (App Installer da Microsoft Store). Instale e rode de novo."; return }
 
 # Git antes do login: o `gh auth login` configura o Git e, sem ele, sai com erro mesmo depois de logar
